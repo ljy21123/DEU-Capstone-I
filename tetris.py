@@ -1,3 +1,13 @@
+# 테트리스의 게임 기능과 알고리즘이 구현되어있는 소스코드입니다.
+# 화면의 크기, 블록의 속도, 점수, 키 이벤트, 블록 생성, 블록 이동 및 회전, 
+# 충돌, 블록 파괴, 스코어 출력, 게임오버 판단, 블록 미리보기, 블록의 색,
+# 테트리스 알고리즘(미구현)
+# 작성자: 양시현
+# 수정 이력:
+# - 2023-09-23: 초기버전 생성
+# - 2023-10-05: 분리되어 있던 테트리스 알고리즘을 함수를 테트리스에 통합
+
+
 import sys
 from math import sqrt
 import random
@@ -7,7 +17,8 @@ from pygame.locals import *
 
 from blocks import *
 
-import tetris_algorithm
+from time import sleep
+
 
 # 전역 변수
 pygame.init()
@@ -63,7 +74,7 @@ class Block:
                     self.ypos = self.ypos + 1  
             elif PLAY_TYPE == 'AI':
                 pass
-
+    
         return erased
                                 
 
@@ -176,7 +187,10 @@ def main(play_type = 'USER'):
     global PLAY_TYPE
     PLAY_TYPE = play_type
 
+    # 알고리즘의 계산 결과를 저장
     test = list()
+    # 속도 조절을 위한 변수
+    tik = 0
 
     global BLOCK
     if BLOCK is None:
@@ -248,12 +262,18 @@ def main(play_type = 'USER'):
         elif play_type == 'AI':
             if is_game_over():
                 SURFACE.blit(message_over, message_rect)
-                
+                return 0
+        
             else: 
                 if len(test) == 0:
-                    test = tetris_algorithm.calculate_best_placement(FIELD, BLOCK)
+                    test = calculate_best_placement(FIELD, BLOCK)
                 else:
+                        # 그냥 한 프레임에 처리하기
                         for _ in range(len(test)):
+                        # 블록 속도
+                        #tik = tik + 1
+                        #if tik > FPS*0 :
+                        #    tik = 0
                             key = test.pop(0)
                             if key == K_UP:
                                 BLOCK.up()
@@ -265,6 +285,8 @@ def main(play_type = 'USER'):
                                 BLOCK.down()
                             elif key == K_SPACE:
                                 BLOCK.drop()
+                        
+                            
 
                 # 2차원 배열을 그림으로 그린다
                 SURFACE.fill((0, 0, 0))
@@ -309,6 +331,14 @@ def main(play_type = 'USER'):
         pygame.display.update()
         # 프레임 설정
         FPSCLOCK.tick(FPS)
+
+
+def calculate_best_placement(FIELD, BLOCK):
+    tmp = list()
+    tmp.append(K_LEFT)
+    tmp.append(K_LEFT)
+    tmp.append(K_SPACE)
+    return tmp
 
 
 if __name__ == '__main__':
