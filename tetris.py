@@ -19,6 +19,7 @@ from pygame.locals import *
 from blocks import *
 
 import datetime
+import time
 
 
 # 전역 변수
@@ -275,9 +276,9 @@ def main(play_type = 'USER'):
                 if len(test) == 0:
                     test = calculate_best_placement(FIELD, BLOCK)
                 else:
-                        # 그냥 한 프레임에 처리하기
+                        # 한 프레임에 블록 처리하기
                         for _ in range(len(test)):
-                        # 블록 속도
+                        # 프레임 단위로 처리
                         #tik = tik + 1
                         #if tik > FPS*0 :
                         #    tik = 0
@@ -363,6 +364,15 @@ def calculate_best_placement(FIELD, BLOCK):
     tmp.append(K_LEFT)
     tmp.append(K_LEFT)
     tmp.append(K_SPACE)
+    
+    
+
+    # 필드 출력
+    for i in range(len(FIELD)):
+        print(FIELD[i])
+
+    # 출력 속도 조절
+    time.sleep(2)
     return tmp
 
 
