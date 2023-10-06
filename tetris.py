@@ -1,12 +1,13 @@
 # 테트리스의 게임 기능과 알고리즘이 구현되어있는 소스코드입니다.
 # 화면의 크기, 블록의 속도, 점수, 키 이벤트, 블록 생성, 블록 이동 및 회전, 
 # 충돌, 블록 파괴, 스코어 출력, 게임오버 판단, 블록 미리보기, 블록의 색,
+# 시간 출력
 # 테트리스 알고리즘(미구현)
 # 작성자: 양시현
 # 수정 이력:
 # - 2023-09-23: 초기버전 생성
 # - 2023-10-05: 분리되어 있던 테트리스 알고리즘을 함수를 테트리스에 통합
-
+# - 2023-10-06: 시작 시간 및 현재 시간 출력
 
 import sys
 from math import sqrt
@@ -17,7 +18,7 @@ from pygame.locals import *
 
 from blocks import *
 
-from time import sleep
+import datetime
 
 
 # 전역 변수
@@ -31,7 +32,7 @@ HEIGHT = 22 # 게임 필드의 높이
 FIELD = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
 # 화면 프레임관련 변수
 FPSCLOCK = pygame.time.Clock()
-FPS = 60
+FPS = 30
 # 현재 움직이는 블록 정보
 BLOCK = None
 # 키를 누르고있으면 반복해서 입력되도록 하는 기능
@@ -41,6 +42,8 @@ pygame.key.set_repeat(500, 30)
 # 플레이 타입을 저장한다 USER or AI
 PLAY_TYPE = ''
 
+# 시작한 시간으 기록합니다.
+START_TIME = datetime.datetime.now()
 
 class Block:
     def __init__(self, name):
@@ -200,6 +203,7 @@ def main(play_type = 'USER'):
     score = 0
     # 폰트 생성
     smallfont = pygame.font.SysFont(None, 36)
+    timefont = pygame.font.SysFont("malgungothic", 16)
     largefont = pygame.font.SysFont(None, 72)
     message_over = largefont.render("GAME OVER!!", True, (255, 255, 255))
     message_rect = message_over.get_rect()
@@ -218,6 +222,9 @@ def main(play_type = 'USER'):
     for index in range(WIDTH):
         FIELD[HEIGHT-1][index] = 9     
 
+    # 경과 시간 출력을 위한 변수
+    current_time = datetime.datetime.now()
+    last_update_time = 0    
 
     # 게임 무한 루프를 수행
     while 1:
@@ -326,6 +333,24 @@ def main(play_type = 'USER'):
         score_image = smallfont.render(score_str, True, (180, 180, 180))
         #점수 출력 자리 설정
         SURFACE.blit(score_image, (500, 30))
+
+        # 시작 시간 출력
+        # 현재 시간 변수
+        global START_TIME
+        # 문자열 변환
+        time_str = START_TIME.strftime("시작 시간: %Y.%m.%d %H:%M:%S")
+        time_image = timefont.render(time_str, True, (180, 180, 180))
+        SURFACE.blit(time_image, (350, 500))
+    
+        # 현재 시간
+        # 1초(1000ms)마다 시간 업데이트
+        if pygame.time.get_ticks() - last_update_time >= 1000:  # 1000 밀리초(1초)마다        
+            current_time = datetime.datetime.now()
+            last_update_time = pygame.time.get_ticks()
+
+        time_str = current_time.strftime("현재 시간: %Y.%m.%d %H:%M:%S")
+        time_image = timefont.render(time_str, True, (180, 180, 180))
+        SURFACE.blit(time_image, (350, 520))
 
         # 화면 업데이트
         pygame.display.update()
