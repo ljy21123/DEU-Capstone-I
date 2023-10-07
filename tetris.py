@@ -8,6 +8,9 @@
 # - 2023-09-23: 초기버전 생성
 # - 2023-10-05: 분리되어 있던 테트리스 알고리즘을 함수를 테트리스에 통합
 # - 2023-10-06: 시작 시간 및 현재 시간 출력
+# - 2023-10-07: calculate_best_placement() 함수의 매개변수에 대한 주석 추가,
+#               블럭의 2차원 배열 변환 및 출력,
+#               원본 필드의 변경을 막기위한 필드 복사 추가 및 복사를 위한 copy 패키지 추가
 
 import sys
 from math import sqrt
@@ -19,8 +22,8 @@ from pygame.locals import *
 from blocks import *
 
 import datetime
-import time
 
+import copy
 
 # 전역 변수
 pygame.init()
@@ -185,7 +188,7 @@ def erase_line():
     return erased
 
 
-def main(play_type = 'USER'):
+def main(play_type = 'AI'):
     global FIELD
     
     global PLAY_TYPE
@@ -359,21 +362,71 @@ def main(play_type = 'USER'):
         FPSCLOCK.tick(FPS)
 
 
-def calculate_best_placement(FIELD, BLOCK):
-    tmp = list()
-    tmp.append(K_LEFT)
-    tmp.append(K_LEFT)
-    tmp.append(K_SPACE)
-    
-    
+# 블록을 놓을 위치를 계산하는 알고리즘 함수
+def calculate_best_placement(FIELD, BLOCK: Block):
+    # FIELD: 현재 테트리스 게임판 정보를 가진 2차원 배열입니다.
+    # 놓을 위치를 계산할때 원본을 훼손하면 안 되기 때문에 아래와 같이 복사하여 연산해야 합니다.
+    # copy 패키지를 이용하여 배열 복사
+    copied_field = copy.deepcopy(FIELD)
 
-    # 필드 출력
-    for i in range(len(FIELD)):
-        print(FIELD[i])
+    # BLOCK: 현재 움직이고 있는 다음과 같은 블록의 정보들을 가지고 있습니다.
+    # BLOCK.turn: 블록의 회전 상태를 나타내며 모든 블록은 총 4가지 상태(0 ~ 3)를 가지고 있습니다.
+    # BLOCK.data: 현재 모습의(회전한) 블럭 정보(1차원 배열)을 저장하는 변수 
+    # 아래와 같이 블럭의 회전 모습을 변경할 수 있습니다.
+    # BLOCK.turn = i 
+    # BLOCK.data = BLOCK.type[BLOCK.turn] 
+    # Block.size: 현재 블록의 길이(총길이의 제곱근) 정보를 가지는 변수 int(sqrt(len(self.data)))
+     
+
+
+    # 블록을 놓을 위치로 가기위한 조작을 반환하는 배열
+    # 예 movements.append(K_LEFT) 블록을 왼쪽으로 이동
+    # movements.append(K_SPACE) 지금 위치에서 가장 아래로 블록을 이동시킨다
+    movements = list()
+
+    
+    # 블록의 상태는 1차원 배열로 되어있기 떄문에 2차원 배열로 변환
+    # 2차원 배열로 변환된 블럭(회전한 모습 포함 4종류)를 저장할 3차원 배열
+    block_list = []
+    
+    # 현재 블록의 모든 형태(회전한 4종류)를 반복
+    for i in range(4):
+        # 변환할 블럭의 모양을 설정
+        BLOCK.turn = i 
+        BLOCK.data = BLOCK.type[BLOCK.turn] 
+
+        # 현재 블럭을 2차원 배열로 변환
+        block = list(BLOCK.data)
+        # 1차원 배열로 되어있는 현재 블럭의 총길이의 제곱근을 구해
+        # 2차원 배열로 변환하였을 때의 가로 길이를 구한다
+        width = int(sqrt(len(BLOCK.data)))
+
+        # 구한 길이만큼 1차원 배열을 잘라서 저장
+        temp_block_list = []
+        for i in range(0, len(BLOCK.data), width):
+            row = block[i:i + width]
+            temp_block_list.append(row)
+        
+        block_list.append(temp_block_list)
+
+    
+    # 저장된 블럭을 출력합니다. 
+    for i in range(len(block_list)):
+        for j in range(len(block_list[i])):
+            for k in range(len(block_list[i][j])):
+                print(block_list[i][j][k], end='')
+            print()
+        print()
+
+
+
+    # 현재 필드의 모양을 콘솔에 출력
+    #for i in range(len(copied_field)):
+        #print(copied_field[i])
 
     # 출력 속도 조절
-    time.sleep(2)
-    return tmp
+    #time.sleep(2)
+    return movements
 
 
 if __name__ == '__main__':
