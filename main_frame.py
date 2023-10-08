@@ -9,7 +9,7 @@ import pygame
 import sys
 from pygame.locals import *
 
-#import tetirs
+import tetris
 
 
 def main():
@@ -30,8 +30,11 @@ def main():
             elif event.type == KEYDOWN: # 키를 눌렀을때 만약 esc키라면 종료
                 key = event.key
                 if key == K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()  
+                elif key == K_SPACE:
                     pygame.display.set_mode((600, 600))
-                    #tetris.main('AI')
+                    tetris.main('AI')
                     
         # 점수 자리수 설정
         score_str = "한글 출력"

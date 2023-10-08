@@ -188,7 +188,7 @@ def erase_line():
     return erased
 
 
-def main(play_type = 'AI'):
+def main(play_type = 'USER'):
     global FIELD
     
     global PLAY_TYPE
@@ -411,12 +411,12 @@ def calculate_best_placement(FIELD, BLOCK: Block):
 
     
     # 저장된 블럭을 출력합니다. 
-    for i in range(len(block_list)):
-        for j in range(len(block_list[i])):
-            for k in range(len(block_list[i][j])):
-                print(block_list[i][j][k], end='')
-            print()
-        print()
+    #for i in range(len(block_list)):
+    #    for j in range(len(block_list[i])):
+    #        for k in range(len(block_list[i][j])):
+    #            print(block_list[i][j][k], end='')
+    #        print()
+    #    print()
 
 
 
