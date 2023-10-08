@@ -11,6 +11,9 @@
 # - 2023-10-07: calculate_best_placement() 함수의 매개변수에 대한 주석 추가,
 #               블럭의 2차원 배열 변환 및 출력,
 #               원본 필드의 변경을 막기위한 필드 복사 추가 및 복사를 위한 copy 패키지 추가
+# - 2023-10-08: 복사한 필드의 충돌판정을 위한 copied_field_is_overlapped() 함수 추가,
+#               calculate_best_placement() 함수에 현재 블럭에 대한 회전 포함 블럭을 
+#               놓을 수 있는 모든 경우의 수를 출력하는 코드 추가
 
 import sys
 from math import sqrt
@@ -24,6 +27,7 @@ from blocks import *
 import datetime
 
 import copy
+import time 
 
 # 전역 변수
 pygame.init()
@@ -82,8 +86,7 @@ class Block:
             elif PLAY_TYPE == 'AI':
                 pass
     
-        return erased
-                                
+        return erased           
 
     def draw(self):
         for index in range(len(self.data)):
@@ -188,7 +191,7 @@ def erase_line():
     return erased
 
 
-def main(play_type = 'USER'):
+def main(play_type = 'AI'):
     global FIELD
     
     global PLAY_TYPE
@@ -361,6 +364,17 @@ def main(play_type = 'USER'):
         # 프레임 설정
         FPSCLOCK.tick(FPS)
 
+# 복사필드의 충돌 판정 true = 충돌, false = 충돌x
+def copied_field_is_overlapped(xpos, ypos, turn, field):
+    data = BLOCK.type[turn]
+    for y_offset in range(BLOCK.size):
+        for x_offset in range(BLOCK.size):
+            if ((0 <= xpos+x_offset < WIDTH) and
+                (0 <= ypos+y_offset < HEIGHT)):
+                if ((data[y_offset*BLOCK.size + x_offset] != 0) and
+                    (field[ypos+y_offset][xpos+x_offset] != 0)):
+                    return True
+    return False
 
 # 블록을 놓을 위치를 계산하는 알고리즘 함수
 def calculate_best_placement(FIELD, BLOCK: Block):
@@ -390,7 +404,7 @@ def calculate_best_placement(FIELD, BLOCK: Block):
     block_list = []
     
     # 현재 블록의 모든 형태(회전한 4종류)를 반복
-    for i in range(4):
+    for i in range(len(BLOCK.type)):
         # 변환할 블럭의 모양을 설정
         BLOCK.turn = i 
         BLOCK.data = BLOCK.type[BLOCK.turn] 
@@ -410,22 +424,76 @@ def calculate_best_placement(FIELD, BLOCK: Block):
         block_list.append(temp_block_list)
 
     
+
     # 저장된 블럭을 출력합니다. 
-    #for i in range(len(block_list)):
-    #    for j in range(len(block_list[i])):
-    #        for k in range(len(block_list[i][j])):
-    #            print(block_list[i][j][k], end='')
-    #        print()
-    #    print()
+    #for i in range(len(BLOCK.type)):
+    for i in range(1):
+        for j in range(len(block_list[i])):
+            for k in range(len(block_list[i][j])):
+                if block_list[i][j][k] != 0:
+                    print('◼', end='')
+                else:
+                    print('◻',end='')
+                
+            print()
+        print()
 
 
+    # 모든 위치 계산
+    # 블록의 초기 위치는 x=4 y=0
+    # 계산식 = (WIDTH - self.size)//2
+    
+    # 현재 블록의 모든 회전형태를 반복
+    for i in range(len(BLOCK.type)):
+        # 블록의 회전 형태 변환
+        BLOCK.turn = i
+        BLOCK.data = BLOCK.type[BLOCK.turn] 
 
-    # 현재 필드의 모양을 콘솔에 출력
-    #for i in range(len(copied_field)):
-        #print(copied_field[i])
+        # 현재 블록을 가장 왼쪽으로 옮긴 후 오른쪽으로 1칸씩 이동
+        # 가장 왼쪽으로 이동/ 충돌 판정이 False(충돌 x인 동안)
+        while not copied_field_is_overlapped(BLOCK.xpos-1, BLOCK.ypos, BLOCK.turn, copied_field):
+            BLOCK.xpos = BLOCK.xpos - 1
+        
+        # 반복문을 위해 한번 더 감소
+        BLOCK.xpos = BLOCK.xpos - 1
+
+        # 오른쪽으로 이동
+        while not copied_field_is_overlapped(BLOCK.xpos+1, BLOCK.ypos, BLOCK.turn, copied_field):
+            # 필드 초기화
+            # copy 패키지를 이용하여 배열 복사
+            copied_field = copy.deepcopy(FIELD)
+
+            # 블록의 위치를 오른쪽으로 이동 시킨다
+            BLOCK.xpos = BLOCK.xpos + 1
+
+            # 높이 계산
+            ypos = BLOCK.ypos
+            while not copied_field_is_overlapped(BLOCK.xpos, ypos+1, BLOCK.turn, copied_field):
+                ypos = ypos + 1
+
+            # 현재 모양의 블록을 게임 필드에 반영
+            for i in range(BLOCK.size):
+                for j in range(BLOCK.size):
+                    # indexerror를 방지하기 위해 블록만 반영
+                    if block_list[BLOCK.turn][i][j] != 0:
+                        copied_field[ypos + i][BLOCK.xpos + j] += block_list[BLOCK.turn][i][j]
+
+            # 현재 필드의 모양을 콘솔에 출력
+            for i in range(len(copied_field)):
+                for j in range(len(copied_field[i])):
+                    if copied_field[i][j] == 9:
+                        pass
+                        #print('9', end='')
+                    elif copied_field[i][j] == 0:   
+                        print('◻', end='')
+                    else:
+                        print('◼', end='')
+                print()
+            print()          
 
     # 출력 속도 조절
     #time.sleep(2)
+    sys.exit(0)
     return movements
 
 
