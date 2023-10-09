@@ -1,8 +1,7 @@
 # 테트리스의 게임 기능과 알고리즘이 구현되어있는 소스코드입니다.
 # 화면의 크기, 블록의 속도, 점수, 키 이벤트, 블록 생성, 블록 이동 및 회전, 
 # 충돌, 블록 파괴, 스코어 출력, 게임오버 판단, 블록 미리보기, 블록의 색,
-# 시간 출력
-# 테트리스 알고리즘(미구현)
+# 시간 출력, 테트리스 알고리즘
 # 작성자: 양시현
 # 수정 이력:
 # - 2023-09-23: 초기버전 생성
@@ -14,6 +13,13 @@
 # - 2023-10-08: 복사한 필드의 충돌판정을 위한 copied_field_is_overlapped() 함수 추가,
 #               calculate_best_placement() 함수에 현재 블럭에 대한 회전 포함 블럭을 
 #               놓을 수 있는 모든 경우의 수를 출력하는 코드 추가
+# - 2023-10-09: 게임 필드의 평가를 위한 calculator.py import 
+#               지정된 좌표로 이동하기 위한 조작을 반환하는 moveto() 추가
+#               테트리스 알고리즘 완성, 현재 가중치 변수 출력, 배속 변경(-, =), 유전 세대, 개체 번호 출력,
+#               main()의 가중치 매개변수 추가,
+#               블록 회전시 벽을 뚫고 지나가던 버그 수정
+# - 2023-10-10: 막대모양의 블록의 충돌 판정에 오류가 있던 문제 수정
+
 
 import sys
 from math import sqrt
@@ -23,11 +29,12 @@ import pygame
 from pygame.locals import *
 
 from blocks import *
+import calculator
 
 import datetime
 
 import copy
-import time 
+
 
 # 전역 변수
 pygame.init()
@@ -40,7 +47,7 @@ HEIGHT = 22 # 게임 필드의 높이
 FIELD = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
 # 화면 프레임관련 변수
 FPSCLOCK = pygame.time.Clock()
-FPS = 30
+FPS = 60
 # 현재 움직이는 블록 정보
 BLOCK = None
 # 키를 누르고있으면 반복해서 입력되도록 하는 기능
@@ -53,6 +60,10 @@ PLAY_TYPE = ''
 # 시작한 시간으 기록합니다.
 START_TIME = datetime.datetime.now()
 
+# 점수계산을 위한 객체
+CALC = None
+
+
 class Block:
     def __init__(self, name):
         self.turn = 0
@@ -62,6 +73,7 @@ class Block:
         self.xpos = (WIDTH - self.size)//2
         self.ypos = 0
         self.stop = 0
+        self.name = name
 
     def update(self):
         global BLOCK
@@ -113,7 +125,7 @@ class Block:
             self.ypos = self.ypos + 1
     
     def up(self):
-        if not is_overlapped(self.xpos-1, self.ypos, (self.turn + 1) % 4):
+        if not is_overlapped(self.xpos, self.ypos, (self.turn + 1) % 4):
             self.turn = (self.turn + 1) % 4 
             self.data = self.type[self.turn]
     
@@ -150,6 +162,22 @@ def get_block():
 # 충돌 판정 true = 충돌, false = 충돌x
 def is_overlapped(xpos, ypos, turn):
     data = BLOCK.type[turn]
+    # 2차원 배열로 변환
+    # data_2d = [[0 for _ in range(BLOCK.size)] for _ in range(BLOCK.size)]
+    
+    # for y_offset in range(BLOCK.size):
+    #     for x_offset in range(BLOCK.size):
+    #         data_2d[y_offset][x_offset] = data[y_offset * BLOCK.size + x_offset]
+
+    
+    # for y_offset in range(BLOCK.size):
+    #     for x_offset in range(BLOCK.size):
+    #         if 0 <= xpos + x_offset < len(FIELD[0]) and 0 <= ypos + y_offset < len(FIELD):
+    #             if FIELD[ypos + y_offset][xpos + x_offset] == 8 or FIELD[ypos + y_offset][xpos + x_offset] == 9:
+    #                 if data_2d[y_offset][x_offset] != 0:
+    #                     return True 
+    # return False
+    
     for y_offset in range(BLOCK.size):
         for x_offset in range(BLOCK.size):
             if ((0 <= xpos+x_offset < WIDTH) and
@@ -190,15 +218,22 @@ def erase_line():
             ypos = ypos -1
     return erased
 
-
-def main(play_type = 'AI'):
+def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None): # 가중치를 여기서 받는다?
     global FIELD
-    
+    global FPS
+    global CALC
+
+    # 가중치를 입력 받았다면 가중치를 반영하여 계산할 계산 객체 생성
+    if hw != None and aw != None and clw != None and bw != None:
+        CALC = calculator.Calculator(hw, aw, clw, bw)
+    # 구멍 개수, 모든 열의 높이 합, 완성된 줄의 수, 불연속성
+    #CALC = calculator.Calculator(-1.5, -1.2, 1.0, -0.5)    
+
     global PLAY_TYPE
     PLAY_TYPE = play_type
 
     # 알고리즘의 계산 결과를 저장
-    test = list()
+    move = list()
     # 속도 조절을 위한 변수
     tik = 0
 
@@ -211,6 +246,7 @@ def main(play_type = 'AI'):
     # 폰트 생성
     smallfont = pygame.font.SysFont(None, 36)
     timefont = pygame.font.SysFont("malgungothic", 16)
+    wfont = pygame.font.SysFont("malgungothic", 11)
     largefont = pygame.font.SysFont(None, 72)
     message_over = largefont.render("GAME OVER!!", True, (255, 255, 255))
     message_rect = message_over.get_rect()
@@ -246,6 +282,12 @@ def main(play_type = 'AI'):
                 if key == K_ESCAPE:
                     pygame.quit()
                     sys.exit()
+                elif key == K_EQUALS and play_type == 'AI':
+                    if  FPS < 200:
+                        FPS += 10
+                elif key == K_MINUS and play_type == 'AI':
+                    if 20 < FPS:
+                        FPS -= 10
 
         # 플레이 타입이 USER라면 키보드 입력을 기다린다.
         if play_type == 'USER':
@@ -276,19 +318,19 @@ def main(play_type = 'AI'):
         elif play_type == 'AI':
             if is_game_over():
                 SURFACE.blit(message_over, message_rect)
-                return 0
+                return score
         
             else: 
-                if len(test) == 0:
-                    test = calculate_best_placement(FIELD, BLOCK)
+                if len(move) == 0:
+                    move = calculate_best_placement(FIELD, BLOCK)
                 else:
                         # 한 프레임에 블록 처리하기
-                        for _ in range(len(test)):
+                        for _ in range(len(move)):
                         # 프레임 단위로 처리
                         #tik = tik + 1
                         #if tik > FPS*0 :
-                        #    tik = 0
-                            key = test.pop(0)
+                            tik = 0
+                            key = move.pop(0)
                             if key == K_UP:
                                 BLOCK.up()
                             elif key == K_RIGHT:
@@ -321,10 +363,10 @@ def main(play_type = 'AI'):
 
 
         # 다음 블록 미리보기
-        """
+        
         global BLOCK_QUEUE
         ymargin = 0
-        for next_block in BLOCK_QUEUE[0:1]:
+        for next_block in BLOCK_QUEUE[0:3]:
             ymargin +=1 
             for ypos in range(next_block.size):
                 for xpos in range(next_block.size):
@@ -332,7 +374,7 @@ def main(play_type = 'AI'):
                     pygame.draw.rect(SURFACE, COLORS[value],
                                      (xpos*15+460, ypos*15+75*ymargin,
                                       15,15))
-        """
+        
         # 점수 출력
         # 점수 자리수 설정
         score_str = str(score).zfill(6)
@@ -348,7 +390,7 @@ def main(play_type = 'AI'):
         time_str = START_TIME.strftime("시작 시간: %Y.%m.%d %H:%M:%S")
         time_image = timefont.render(time_str, True, (180, 180, 180))
         SURFACE.blit(time_image, (350, 500))
-    
+        
         # 현재 시간
         # 1초(1000ms)마다 시간 업데이트
         if pygame.time.get_ticks() - last_update_time >= 1000:  # 1000 밀리초(1초)마다        
@@ -358,6 +400,37 @@ def main(play_type = 'AI'):
         time_str = current_time.strftime("현재 시간: %Y.%m.%d %H:%M:%S")
         time_image = timefont.render(time_str, True, (180, 180, 180))
         SURFACE.blit(time_image, (350, 520))
+
+        if play_type == 'AI':
+            ge_str = '현재 세대: '# + str()
+            ge_image = wfont.render(ge_str, True, (180, 180, 180))
+            SURFACE.blit(ge_image, (350, 360))
+            
+            in_str = '개체 번호: '# + str()
+            in_image = wfont.render(in_str, True, (180, 180, 180))
+            SURFACE.blit(in_image, (350, 380))
+
+            hw_str = '구멍에 대한 가중치: ' + str(hw)
+            hw_image = wfont.render(hw_str, True, (180, 180, 180))
+            SURFACE.blit(hw_image, (350, 410))
+
+            aw_str = '총 높이에 대한 가중치: ' + str(aw)
+            aw_image = wfont.render(aw_str, True, (180, 180, 180))
+            SURFACE.blit(aw_image, (350, 430))
+
+            clw_str = '완성된 줄에 대한 가중치: ' + str(clw)
+            clw_image = wfont.render(clw_str, True, (180, 180, 180))
+            SURFACE.blit(clw_image, (350, 450))
+
+            bw_str = '높이 불연속성에 대한 가중치: ' + str(bw)
+            bw_image = wfont.render(bw_str, True, (180, 180, 180))
+            SURFACE.blit(bw_image, (350, 470))
+
+            fps_str = '배속: ' + str(FPS) + 'FPS'
+            fps_image = timefont.render(fps_str, True, (180, 180, 180))
+            SURFACE.blit(fps_image, (350, 550))
+
+
 
         # 화면 업데이트
         pygame.display.update()
@@ -376,12 +449,19 @@ def copied_field_is_overlapped(xpos, ypos, turn, field):
                     return True
     return False
 
+
 # 블록을 놓을 위치를 계산하는 알고리즘 함수
 def calculate_best_placement(FIELD, BLOCK: Block):
     # FIELD: 현재 테트리스 게임판 정보를 가진 2차원 배열입니다.
     # 놓을 위치를 계산할때 원본을 훼손하면 안 되기 때문에 아래와 같이 복사하여 연산해야 합니다.
     # copy 패키지를 이용하여 배열 복사
     copied_field = copy.deepcopy(FIELD)
+
+    # 블록 또한 복사
+    copied_block = Block(BLOCK.name)
+    
+    # 계산을 위한 객체
+    global CALC
 
     # BLOCK: 현재 움직이고 있는 다음과 같은 블록의 정보들을 가지고 있습니다.
     # BLOCK.turn: 블록의 회전 상태를 나타내며 모든 블록은 총 4가지 상태(0 ~ 3)를 가지고 있습니다.
@@ -396,105 +476,164 @@ def calculate_best_placement(FIELD, BLOCK: Block):
     # 블록을 놓을 위치로 가기위한 조작을 반환하는 배열
     # 예 movements.append(K_LEFT) 블록을 왼쪽으로 이동
     # movements.append(K_SPACE) 지금 위치에서 가장 아래로 블록을 이동시킨다
-    movements = list()
-
+    movements = []
     
+    # 각 블럭의 회전 상태와 배치 경우에 따른 점수 평가를 저장할 배열
+    score_list = []
+
     # 블록의 상태는 1차원 배열로 되어있기 떄문에 2차원 배열로 변환
     # 2차원 배열로 변환된 블럭(회전한 모습 포함 4종류)를 저장할 3차원 배열
     block_list = []
-    
+
     # 현재 블록의 모든 형태(회전한 4종류)를 반복
-    for i in range(len(BLOCK.type)):
+    for i in range(len(copied_block.type)):
         # 변환할 블럭의 모양을 설정
-        BLOCK.turn = i 
-        BLOCK.data = BLOCK.type[BLOCK.turn] 
+        copied_block.turn = i 
+        copied_block.data = BLOCK.type[copied_block.turn] 
 
         # 현재 블럭을 2차원 배열로 변환
-        block = list(BLOCK.data)
+        block = list(copied_block.data)
         # 1차원 배열로 되어있는 현재 블럭의 총길이의 제곱근을 구해
         # 2차원 배열로 변환하였을 때의 가로 길이를 구한다
-        width = int(sqrt(len(BLOCK.data)))
+        width = int(sqrt(len(copied_block.data)))
 
         # 구한 길이만큼 1차원 배열을 잘라서 저장
         temp_block_list = []
-        for i in range(0, len(BLOCK.data), width):
+        for i in range(0, len(copied_block.data), width):
             row = block[i:i + width]
             temp_block_list.append(row)
         
         block_list.append(temp_block_list)
 
-    
 
     # 저장된 블럭을 출력합니다. 
     #for i in range(len(BLOCK.type)):
-    for i in range(1):
-        for j in range(len(block_list[i])):
-            for k in range(len(block_list[i][j])):
-                if block_list[i][j][k] != 0:
-                    print('◼', end='')
-                else:
-                    print('◻',end='')
+    # for i in range(1):
+    #     for j in range(len(block_list[i])):
+    #         for k in range(len(block_list[i][j])):
+    #             if block_list[i][j][k] != 0:
+    #                 print('◼', end='')
+    #             else:
+    #                 print('◻',end='')
                 
-            print()
-        print()
-
+    #         print()
+    #     print()
 
     # 모든 위치 계산
     # 블록의 초기 위치는 x=4 y=0
     # 계산식 = (WIDTH - self.size)//2
-    
-    # 현재 블록의 모든 회전형태를 반복
-    for i in range(len(BLOCK.type)):
-        # 블록의 회전 형태 변환
-        BLOCK.turn = i
-        BLOCK.data = BLOCK.type[BLOCK.turn] 
 
+    # 현재 블록의 모든 회전형태를 반복
+    for i in range(len(copied_block.type)):
+        # 블록의 회전 형태 변환
+        copied_block.turn = i
+        copied_block.data = copied_block.type[copied_block.turn] 
+        copied_block.xpos = (WIDTH - copied_block.size) // 2
+        copied_block.ypos = 0
+        
+        # 반복문이 한번이라도 작동하였는지 체크를 위한 변수
+        c = False
         # 현재 블록을 가장 왼쪽으로 옮긴 후 오른쪽으로 1칸씩 이동
         # 가장 왼쪽으로 이동/ 충돌 판정이 False(충돌 x인 동안)
-        while not copied_field_is_overlapped(BLOCK.xpos-1, BLOCK.ypos, BLOCK.turn, copied_field):
-            BLOCK.xpos = BLOCK.xpos - 1
-        
-        # 반복문을 위해 한번 더 감소
-        BLOCK.xpos = BLOCK.xpos - 1
+        while not copied_field_is_overlapped(copied_block.xpos-1, copied_block.ypos, copied_block.turn, copied_field): 
+            copied_block.xpos = copied_block.xpos - 1
+            c = True
 
+        # 반복문이 한번이라도 동작 했다면 반복문을 위해 한번 더 감소
+        if c:
+            copied_block.xpos = copied_block.xpos - 1
         # 오른쪽으로 이동
-        while not copied_field_is_overlapped(BLOCK.xpos+1, BLOCK.ypos, BLOCK.turn, copied_field):
+        while not copied_field_is_overlapped(copied_block.xpos+1, copied_block.ypos, copied_block.turn, copied_field):
+            # 블록의 위치를 오른쪽으로 이동 시킨다
+            copied_block.xpos = copied_block.xpos + 1
             # 필드 초기화
             # copy 패키지를 이용하여 배열 복사
             copied_field = copy.deepcopy(FIELD)
-
-            # 블록의 위치를 오른쪽으로 이동 시킨다
-            BLOCK.xpos = BLOCK.xpos + 1
-
             # 높이 계산
-            ypos = BLOCK.ypos
-            while not copied_field_is_overlapped(BLOCK.xpos, ypos+1, BLOCK.turn, copied_field):
+            ypos = copied_block.ypos
+            while not copied_field_is_overlapped(copied_block.xpos, ypos+1, copied_block.turn, copied_field):
+                if ypos > len(copied_field):
+                    print(copied_block.xpos, copied_block.turn, copied_block.data ,copied_field)
+                    print(copied_block.data, '에러발생')
+                    sys.exit(1)
                 ypos = ypos + 1
-
             # 현재 모양의 블록을 게임 필드에 반영
-            for i in range(BLOCK.size):
-                for j in range(BLOCK.size):
+            for i in range(copied_block.size):
+                for j in range(copied_block.size):
                     # indexerror를 방지하기 위해 블록만 반영
-                    if block_list[BLOCK.turn][i][j] != 0:
-                        copied_field[ypos + i][BLOCK.xpos + j] += block_list[BLOCK.turn][i][j]
+                    if block_list[copied_block.turn][i][j] != 0:
+                        copied_field[ypos + i][copied_block.xpos + j] += block_list[copied_block.turn][i][j]
 
-            # 현재 필드의 모양을 콘솔에 출력
-            for i in range(len(copied_field)):
-                for j in range(len(copied_field[i])):
-                    if copied_field[i][j] == 9:
-                        pass
-                        #print('9', end='')
-                    elif copied_field[i][j] == 0:   
-                        print('◻', end='')
-                    else:
-                        print('◼', end='')
-                print()
-            print()          
+            # 블록의 x좌표, 회전 형태, 점수 저장            
+            data = (copied_block.xpos, copied_block.turn % 4, CALC.calculate(copied_field))
+            score_list.append(data)
+
+
+    # calculator클래스 메서드 테스트
+    # print('현재 필드의 지울 라인 수: %d' %CALC.erase_line(copied_field))
+    # print('구멍 개수: %d' %CALC.hole_count(copied_field))
+    # print('필드의 총 높이: %d' % CALC.aggregate_height(copied_field))            
+    # print('불연속성: %d' %CALC.bumpiness_height(copied_field))
+    # print('점수: %f'% CALC.calculate(copied_field))
+
+    # 모든 경우의 수에 대한 점수 계산
+    # print(score_list)
+    
+    # 점수 리스트에 들어있는 튜플의 3번째 값(score)을 기준으로 가장 높은 튜플을 가져온다
+    if score_list:
+        height_score = max(score_list, key=lambda x: x[2])
+        # 가장 높은 점수를 받은 위치로 이동하는 조작을 반환받는다. 
+        moveto(height_score, movements)
+    else:
+        # 가끔씩 왜인지 모를 버그로 인해서 score_list가 비어있는 경우가 발생합니다.(거의 1000번에 1번꼴)
+        # 버그 원인을 찾으려고 해도 버그 자체가 거의 안일어나서 수정이 힘듭니다, 
+        # 버그가 일어나면 일어난 필드와 연산중인 블록의 값을 기록해주세요!
+        print("왜 비었지? testris.py 587줄 주석 확인")
+        print(copied_block.data)
+        print(copied_field)
+    #print(height_score)
+   
+    # 현재 필드의 모양을 콘솔에 출력
+    # for i in range(len(copied_field)):
+    #     for j in range(len(copied_field[i])):
+    #         if copied_field[i][j] == 9:
+    #             pass
+    #             #print('9', end='')
+    #         elif copied_field[i][j] == 0:   
+    #             print('◻', end='')
+    #         else:
+    #             print('◼', end='')
+    #     print()
+    # print()          
 
     # 출력 속도 조절
     #time.sleep(2)
-    sys.exit(0)
+    #sys.exit(0)
     return movements
+
+
+def moveto(height_score, movements: list):
+    global BLOCK
+    #print(BLOCK.xpos)
+    
+    xpos = BLOCK.xpos - height_score[0]
+    
+    # 블럭의 회전
+    for _ in range(height_score[1]):
+        movements.append(K_UP)
+
+    # 좌우이동
+    # 좌표 차이만큼 반복
+    for _ in range(abs(xpos)):
+        # xpos가 음수인 경우 오른쪽으로 이동
+        if xpos < 0:
+            movements.append(K_RIGHT)
+        else:
+            movements.append(K_LEFT)
+
+    movements.append(K_SPACE)
+    #print(movements)
+
 
 
 if __name__ == '__main__':
