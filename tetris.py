@@ -226,6 +226,7 @@ def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None): # 가
     # 가중치를 입력 받았다면 가중치를 반영하여 계산할 계산 객체 생성
     if hw != None and aw != None and clw != None and bw != None:
         CALC = calculator.Calculator(hw, aw, clw, bw)
+
     # 구멍 개수, 모든 열의 높이 합, 완성된 줄의 수, 불연속성
     #CALC = calculator.Calculator(-1.5, -1.2, 1.0, -0.5)    
 
