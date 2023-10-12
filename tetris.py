@@ -57,7 +57,7 @@ pygame.key.set_repeat(500, 30)
 # 플레이 타입을 저장한다 USER or AI
 PLAY_TYPE = ''
 
-# 시작한 시간으 기록합니다.
+# 시작한 시간을 기록합니다.
 START_TIME = datetime.datetime.now()
 
 # 점수계산을 위한 객체
@@ -65,29 +65,33 @@ CALC = None
 
 
 class Block:
+    # 생성자
     def __init__(self, name):
-        self.turn = 0
-        self.type = BLOCKS[name]
-        self.data = self.type[self.turn]
-        self.size = int(sqrt(len(self.data)))
-        self.xpos = (WIDTH - self.size)//2
-        self.ypos = 0
-        self.stop = 0
-        self.name = name
+        self.turn = 0  # 블록의 현재 회전 상태
+        self.type = BLOCKS[name]  # 블록의 모양과 회전 상태를 나타내는 배열
+        self.data = self.type[self.turn]  # 현재 회전 상태에 해당하는 블록의 데이터를 가져옴
+        self.size = int(sqrt(len(self.data)))  # 블록 크기 계산
+        self.xpos = (WIDTH - self.size) // 2  # 블록의 초기 x 위치 (중앙)
+        self.ypos = 0   # 블록 초기 y 위치 (맨 위)
+        self.stop = 0   # 블록이 멈춰있는 시간
+        self.name = name    # 블록의 타입이나 이름 저장
 
     def update(self):
-        global BLOCK
+        global BLOCK  # 현재 활성화 된 블록을 나타냄
         erased = 0
+        # 블록이 다음 위치(self.xpos, self.ypos+1)에서 겹치면(다른 블록이나 테트리스 판의 경계와)
+        # 그 블록은 그 위치에서 고정되고, 보드에 추가
         if is_overlapped(self.xpos, self.ypos+1, self.turn):
             for y_offset in range(self.size):
                 for x_offset in range(self.size):
+                    # 블록이 보드 내에 있으면
                     if ((0 <= self.xpos+x_offset < WIDTH) and
                         (0 <= self.ypos+y_offset < HEIGHT)):
-                        val = self.data[y_offset*self.size + x_offset]
+                        val = self.data[y_offset*self.size + x_offset]  # 현재 상태의 블록 가져옴
                         if val != 0:
-                            FIELD[self.ypos+y_offset][self.xpos+x_offset] = val
-            BLOCK = get_block()      
-            erased = erase_line()
+                            FIELD[self.ypos+y_offset][self.xpos+x_offset] = val # FIELD 배열에 복사 (현재 블록이 보드에 추가)
+            BLOCK = get_block() # 새 블럭 생성
+            erased = erase_line()   # 지워진 줄 수 저장
         else: 
             if PLAY_TYPE == 'USER':
                 self.stop = self.stop + 1
@@ -111,7 +115,8 @@ class Block:
                 x_pos = 25 + (xpos + self.xpos) * 25
                 y_pos = 25 + (ypos + self.ypos) * 25
                 pygame.draw.rect(SURFACE, COLORS[val], (x_pos, y_pos, 24, 24))
-    
+
+    # 겹치는 부분 확인 후 없으면 xpos,ypos 하나 감소시켜 이동
     def left(self):
         if not is_overlapped(self.xpos-1, self.ypos, self.turn):
             self.xpos = self.xpos - 1   
@@ -123,14 +128,15 @@ class Block:
     def down(self):
         if not is_overlapped(self.xpos, self.ypos+1, self.turn):
             self.ypos = self.ypos + 1
-    
+
     def up(self):
         if not is_overlapped(self.xpos, self.ypos, (self.turn + 1) % 4):
             self.turn = (self.turn + 1) % 4 
-            self.data = self.type[self.turn]
+            self.data = self.type[self.turn]    # 블록의 새 회전 상태에 맞게 업데이트
     
     def drop(self):
         ypos = self.ypos
+        # 블록이 바닥이나 다른 블록과 겹치지 않을때 까지
         while not is_overlapped(self.xpos, ypos+1, self.turn):
             ypos = ypos + 1
         self.ypos = ypos
@@ -161,7 +167,8 @@ def get_block():
 
 # 충돌 판정 true = 충돌, false = 충돌x
 def is_overlapped(xpos, ypos, turn):
-    data = BLOCK.type[turn]
+    data = BLOCK.type[turn] # 현재 블록 데이터 가져오기
+
     # 2차원 배열로 변환
     # data_2d = [[0 for _ in range(BLOCK.size)] for _ in range(BLOCK.size)]
     
@@ -177,11 +184,14 @@ def is_overlapped(xpos, ypos, turn):
     #                 if data_2d[y_offset][x_offset] != 0:
     #                     return True 
     # return False
-    
+
+    # 블록 데이터 순회
     for y_offset in range(BLOCK.size):
         for x_offset in range(BLOCK.size):
+            # 블록이 보드 내에 있으면
             if ((0 <= xpos+x_offset < WIDTH) and
                 (0 <= ypos+y_offset < HEIGHT)):
+                # 블록의 해당 부분이 빈 칸이 아니고, 보드의 해당 부분도 빈 칸이 아니면 (충돌을 의미)
                 if ((data[y_offset*BLOCK.size + x_offset] != 0) and
                     (FIELD[ypos+y_offset][xpos+x_offset] != 0)):
                     return True
@@ -204,12 +214,14 @@ def is_game_over():
 
 # 현재 지울 라인이 있는지 확인한다.
 def erase_line():
-    erased = 0
-    ypos = HEIGHT - 1
-    while ypos >= 0:
+    erased = 0  # 지워진 줄 수 저장
+    ypos = HEIGHT - 1   # 검사할 줄의 y 위치 나타냄, 가장 아래부터 위로 검사
+    while ypos >= 0:    # 맨 위까지 검사
+        # 해당 줄에 블럭이 완전히 채워져있으면 (0: 빈칸, 9: 벽)
         if FIELD[ypos].count(0) == 0 and FIELD[ypos].count(9) == 2:
-            erased = erased + 1
-            del FIELD[ypos]
+            erased = erased + 1 # 지워진 줄 수 +1
+            del FIELD[ypos] # 줄 삭제
+            # 새로운 줄 생성
             new_line = [0]*(WIDTH-2)
             new_line.insert(0, 9)
             new_line.append(9)
@@ -489,7 +501,7 @@ def calculate_best_placement(FIELD, BLOCK: Block):
     # 현재 블록의 모든 형태(회전한 4종류)를 반복
     for i in range(len(copied_block.type)):
         # 변환할 블럭의 모양을 설정
-        copied_block.turn = i 
+        copied_block.turn = i
         copied_block.data = BLOCK.type[copied_block.turn] 
 
         # 현재 블럭을 2차원 배열로 변환
