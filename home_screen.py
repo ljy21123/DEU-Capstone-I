@@ -69,23 +69,26 @@ def main():
                 for button in buttons:
                     if button.rect.collidepoint(pos):
                         if button.action == "button_1":
-                            with open("setting.csv", "r", newline="") as file:   #setting.csv를 읽어와서 hw, aw, clw, bw에 담음
-                                reader = csv.reader(file)
-                                headers = next(reader)
-                                for row in reader:
-                                    hw, aw, clw, bw = row
-                                # 파일에서 읽은 데이터는 기본적으로 문자열 형태이기 때문에 변환 필요
-                                hw = float(hw)
-                                aw = float(aw)
-                                clw = float(clw)
-                                bw = float(bw)
-                                import tetris   
-                                for _ in range(100):
-                                    #hw, aw, clw, bw를 넣은 테트리스 알고리즘 동작(값은 분명히 전달되는 거 같은데, 제대로 플레이를 하지 못함)
-                                    print(tetris.main('AI', hw, aw, clw, bw)) 
+                            # with open("setting.csv", "r", newline="") as file:   #setting.csv를 읽어와서 hw, aw, clw, bw에 담음
+                            #     reader = csv.reader(file)
+                            #     headers = next(reader)
+                            #     for row in reader:
+                            #         hw, aw, clw, bw = row
+                            #     # 파일에서 읽은 데이터는 기본적으로 문자열 형태이기 때문에 변환 필요
+                            #     hw = float(hw)
+                            #     aw = float(aw)
+                            #     clw = float(clw)
+                            #     bw = float(bw)
+                            #     import tetris   
+                            #     for _ in range(100):
+                            #         #hw, aw, clw, bw를 넣은 테트리스 알고리즘 동작(값은 분명히 전달되는 거 같은데, 제대로 플레이를 하지 못함)
+                            #         print(tetris.main('AI', hw, aw, clw, bw)) 
                                 
                             import genetic_algorithm
-                            genetic_algorithm.genetic_algorithm()
+                            genetic_algorithm.start()
+
+                            # 결과화면을 만들지 않아서 그냥 메인화면으로 돌아옴
+                            screen = pygame.display.set_mode((width, height))
 
                         elif button.action == "button_2":
                             print("기록 화면 버튼")

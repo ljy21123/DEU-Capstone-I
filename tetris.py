@@ -19,7 +19,10 @@
 #               main()의 가중치 매개변수 추가,
 #               블록 회전시 벽을 뚫고 지나가던 버그 수정
 # - 2023-10-10: 막대모양의 블록의 충돌 판정에 오류가 있던 문제 수정
-
+# - 2023-10-12: 블록을 놓을 공간을 탐색할때 탐색 결과가 아무것도 나오지 않던 문제 수정,
+#               가중치가 UI에서 잘리던 현상 수정
+# - 2023-10-13: 세대출력 추가, 폰트크기 수정, main()매개변수 generation과 no추가
+#               
 
 import sys
 from math import sqrt
@@ -39,7 +42,7 @@ import copy
 # 전역 변수
 pygame.init()
 # 화면 크기 설정 600x600
-SURFACE = pygame.display.set_mode([600, 600])
+SURFACE = pygame.display.set_mode([610, 600])
 # 필드의 크기
 WIDTH = 12 # 게임 필드의 가로 길이
 HEIGHT = 22 # 게임 필드의 높이
@@ -218,7 +221,7 @@ def erase_line():
             ypos = ypos -1
     return erased
 
-def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None): # 가중치를 여기서 받는다?
+def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None, generation = 0, no = 0): # 가중치를 여기서 받는다?
     global FIELD
     global FPS
     global CALC
@@ -248,11 +251,14 @@ def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None): # 가
     smallfont = pygame.font.SysFont(None, 36)
     timefont = pygame.font.SysFont("malgungothic", 16)
     wfont = pygame.font.SysFont("malgungothic", 11)
+    genefont = pygame.font.SysFont("malgungothic", 22)
     largefont = pygame.font.SysFont(None, 72)
+    
+    # 메시지 폰트
     message_over = largefont.render("GAME OVER!!", True, (255, 255, 255))
     message_rect = message_over.get_rect()
     message_rect.center = (300, 300)
-    # 메시지
+    
     
 
     # 게임 필드 배열 초기화
@@ -390,7 +396,7 @@ def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None): # 가
         # 문자열 변환
         time_str = START_TIME.strftime("시작 시간: %Y.%m.%d %H:%M:%S")
         time_image = timefont.render(time_str, True, (180, 180, 180))
-        SURFACE.blit(time_image, (350, 500))
+        SURFACE.blit(time_image, (335, 500))
         
         # 현재 시간
         # 1초(1000ms)마다 시간 업데이트
@@ -400,36 +406,36 @@ def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None): # 가
 
         time_str = current_time.strftime("현재 시간: %Y.%m.%d %H:%M:%S")
         time_image = timefont.render(time_str, True, (180, 180, 180))
-        SURFACE.blit(time_image, (350, 520))
+        SURFACE.blit(time_image, (335, 520))
 
         if play_type == 'AI':
-            ge_str = '현재 세대: '# + str()
-            ge_image = wfont.render(ge_str, True, (180, 180, 180))
-            SURFACE.blit(ge_image, (350, 360))
+            ge_str = '현재 세대: ' + str(generation)
+            ge_image = genefont.render(ge_str, True, (180, 180, 180))
+            SURFACE.blit(ge_image, (335, 330))
             
-            in_str = '개체 번호: '# + str()
-            in_image = wfont.render(in_str, True, (180, 180, 180))
-            SURFACE.blit(in_image, (350, 380))
+            in_str = '개체 번호: ' + str(no)
+            in_image = genefont.render(in_str, True, (180, 180, 180))
+            SURFACE.blit(in_image, (335, 370))
 
             hw_str = '구멍에 대한 가중치: ' + str(hw)
             hw_image = wfont.render(hw_str, True, (180, 180, 180))
-            SURFACE.blit(hw_image, (350, 410))
+            SURFACE.blit(hw_image, (335, 410))
 
             aw_str = '총 높이에 대한 가중치: ' + str(aw)
             aw_image = wfont.render(aw_str, True, (180, 180, 180))
-            SURFACE.blit(aw_image, (350, 430))
+            SURFACE.blit(aw_image, (335, 430))
 
             clw_str = '완성된 줄에 대한 가중치: ' + str(clw)
             clw_image = wfont.render(clw_str, True, (180, 180, 180))
-            SURFACE.blit(clw_image, (350, 450))
+            SURFACE.blit(clw_image, (335, 450))
 
             bw_str = '높이 불연속성에 대한 가중치: ' + str(bw)
             bw_image = wfont.render(bw_str, True, (180, 180, 180))
-            SURFACE.blit(bw_image, (350, 470))
+            SURFACE.blit(bw_image, (335, 470))
 
             fps_str = '배속: ' + str(FPS) + 'FPS'
             fps_image = timefont.render(fps_str, True, (180, 180, 180))
-            SURFACE.blit(fps_image, (350, 550))
+            SURFACE.blit(fps_image, (335, 550))
 
 
 
@@ -586,12 +592,17 @@ def calculate_best_placement(FIELD, BLOCK: Block):
         # 가장 높은 점수를 받은 위치로 이동하는 조작을 반환받는다. 
         moveto(height_score, movements)
     else:
+        # 필드에 더이상 블록을 놓을 수 있는 곳이 없을때 오류가 발생합니다.
+        # 그냥 제자리에서 떨어지도록 합니다.
+        height_score = ((WIDTH - copied_block.size) // 2, 0, 1)
+        moveto(height_score, movements)
+
         # 가끔씩 왜인지 모를 버그로 인해서 score_list가 비어있는 경우가 발생합니다.(거의 1000번에 1번꼴)
         # 버그 원인을 찾으려고 해도 버그 자체가 거의 안일어나서 수정이 힘듭니다, 
         # 버그가 일어나면 일어난 필드와 연산중인 블록의 값을 기록해주세요!
-        print("왜 비었지? testris.py 587줄 주석 확인")
-        print(copied_block.data)
-        print(copied_field)
+        # print("왜 비었지? testris.py 587줄 주석 확인")
+        # print(copied_block.data)
+        # print(copied_field)
     #print(height_score)
    
     # 현재 필드의 모양을 콘솔에 출력
