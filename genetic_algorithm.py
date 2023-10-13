@@ -7,10 +7,10 @@
 # 2023-10-10: 임의의 가중치 부여
 # 2023-10-11: generate_random() 함수 추가, random 패키지 추가,
 #             genetic_algorithm 함수에서 클래스로 변경
-# 2023-10-13: 유전알고리즘 구현
+# 2023-10-13: 유전알고리즘 구현,
+#             토너먼트 함수에서 select가 index범위에서 벗어나던 문제 해결,
+#             토너먼트 함수에서 조건을 만족하지 못하고 무한반복되던 문제 해결
 
-# 메모: 현재 토너먼트 함수에서 select가 index범위에서 벗어나는 문제와
-#       무한반복되는 문제가 발생하고 있음
 
 import math
 import random
@@ -20,7 +20,7 @@ import individual
 
 
 # 한 세대의 개채 수
-SIZE = 5
+SIZE = 50
 
 
 class Genetic_algorithm:
@@ -28,7 +28,7 @@ class Genetic_algorithm:
         global SIZE
 
         # 목표 점수
-        goal_score = 1000
+        goal_score = 2000
 
         # 현재 가장 높은 점수
         highest_score = 0
@@ -52,7 +52,7 @@ class Genetic_algorithm:
         #     print(tetris.main('AI', -1.5, -1.2, 1.0, -0.5)) # 임시로 정한 좋은 가중치
         #     print(tetris.main('AI', -1.5, -1.2, 1.0, 0)) # 안좋은 가중치
         
-        # 정렬
+        # 높은 점수 순으로 정렬
         individuals = sorted(individuals)
         
         # 현재 가장 높은 점수를 저장합니다.
@@ -66,15 +66,12 @@ class Genetic_algorithm:
             # 생성된 후보자 개체를 저장할 배열
             candidate = []
 
-            # 기존 개체군의 30%를 저장하는 변수
+            # 기존 개체군의 30%를 저장하는 변수 \ 1명 이하라면 1명으로
             size_30 = max(int(SIZE * 0.3), 1)
 
             # 기존의 개체들을 이용하여 기존 개체 30%만큼 새로운 개체를 생성합니다,
             for i in range(size_30):
-                # 토너먼트 선택을 통해서 적합도가 0이 아닌 랜덤 개체 2개를 선택합니다.
-                numOfTournament = max(int(SIZE * 0.1), 1)
-
-                temp = self.tournament_selection(individuals, numOfTournament)
+                temp = self.tournament_selection(individuals)
 
                 # 선택된 개체 2개를 결합하여 새로운 개체를 생성합니다.
                 final_candidate = self.cross_over(temp[0], temp[1])
@@ -104,8 +101,12 @@ class Genetic_algorithm:
                 bw = individuals[i].bw
                 individuals[i].fitness = tetris.main('AI', hw, aw, clw, bw, generation, individuals[i].no)
 
+            # 높은 점수 순으로 정렬
+            individuals = sorted(individuals)
+
             # 현재 가장 높은 점수를 저장합니다.
             highest_score = individuals[0].fitness
+            print("현재 세대의 최고점: %d" %highest_score)
 
         print("목표도달!!!")
             
@@ -174,65 +175,53 @@ class Genetic_algorithm:
                                     gene1.bw * gene1.fitness + gene2.bw * gene2.fitness)
         return temp
 
-    # 기존의 개체군에서 적합도가 0이 아닌 개체 2개를 무작위로 선택하여 반환합니다.
-    def tournament_selection(self, individuals, numOfTournament):
-        gene1 = None
-        gene2 = None
-        # individuals의 범위보다 큰 값으로 지정
-        select_gene1 = len(individuals)
-        select_gene2 = len(individuals)
-
-        # 선택된 개체를 저장할 배열
+    # 다양성을 위해 기존의 개체군에서 적합도가 0이 아닌 개체 2개를 무작위로 선택하여 반환합니다.
+    def tournament_selection(self, individuals: individual.Individual):
+        # 반환할 결과를 저장하는 함수
         result = []
-        
-        # 적합도를 가진 개체 수가 너무 적어 오래 걸리는것을 방지하기 위한 변수
+        # 매개변수로 전달받은 리스트에서 0이 아닌 개체의 수를 저장할 변수
         zero_count = 0
 
-        # 만약 적합도가 0이 아닌 개체가 2개 미만이라면 랜덤한 값을 리턴한다
+        # 현재 개체군 출력
+        # print()
+        # print("현재 개체군 출력:")
         for value in individuals:
             if value.fitness != 0:
                 zero_count += 1
+            # value.print()
 
+        # 적합도가 0이 아닌 개체수가 2 이하라면
         if zero_count < 2:
+            # 개체 생성 메서드를 사용하여 새로운 개체 생성
             result = self.generate_random(2)
-            result[0].fitness = 1
-            result[1].fitness = 1
+
+            # 새로 생성된 개체 정보 출력
+            # print("zero가 2 미만이기 때문에 생성된 개체:")
+            # 0나누기를 방지하기 위해 생성된 개체의 적합도를 최소인 1로 변경
+            for a in result:
+                a.fitness = 1
+                # a.print()
             return result
+        else:
+            # 적합도 순으로 정렬된 배열에서 0이 아닌 개체 범위
+            # 사이에서 2개의 랜덤한 index를 배열로 반환
+            select_list = random.sample(range(zero_count), 2)
+            # 선택된 랜덤한 개체 2개를 result에 추가하여 반환
+            for index in select_list:
+                result.append(individuals[index])
 
-        # print("제로 카운터:",zero_count, len(individuals))
-        # for i in range(len(individuals)):
-        #     individuals[i].print()
-
-        while True:        
-            for _ in range(numOfTournament):
-                select = random.randint(0, zero_count)      
-                # 현재 아무 개체가 선택되지 않았다면
-                if gene1 == None or select_gene1 > select:
-                    select_gene2 = select_gene1
-                    gene2 = gene1
-
-                    gene1 = individuals[select]
-                    select_gene1 = select
-
-                elif gene2 == None or select_gene2 > select:
-                    gene2 = individuals[select]
-                    select_gene2 = select
-                
-            # 두 개체의 적합도가 0이 아니라면 토너먼트 끝
-            if gene1 != None and gene2 != None:
-                if gene1.fitness != 0 and gene2.fitness != 0:
-                    break
- 
-        result.append(gene1)
-        result.append(gene2)
-
+            # 선택된 개체 2개를 출력
+            # print("zero가 2 이상:")
+            # for a in result:
+            #     a.print()
+            
         return result
 
     # 매개변수 만큼의 개체를 생성하여 반환
-    def generate_random(self, temp):
+    def generate_random(self, size):
         individual_list = []
 
-        for no in range(temp):
+        for no in range(size):
             # -0.5 ~ 0.5 사이의 랜덤 값
             hw = random.random() - 0.5
             aw = random.random() - 0.5
