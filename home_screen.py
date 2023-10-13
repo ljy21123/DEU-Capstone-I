@@ -81,7 +81,6 @@ def main():
                             #     bw = float(bw)
                             #     import tetris   
                             #     for _ in range(100):
-                            #         #hw, aw, clw, bw를 넣은 테트리스 알고리즘 동작(값은 분명히 전달되는 거 같은데, 제대로 플레이를 하지 못함)
                             #         print(tetris.main('AI', hw, aw, clw, bw)) 
                                 
                             import genetic_algorithm
@@ -91,7 +90,9 @@ def main():
                             screen = pygame.display.set_mode((width, height))
 
                         elif button.action == "button_2":
-                            print("기록 화면 버튼")
+                            import records_screen
+                            records_screen.main()
+
                         elif button.action == "button_3":
                             import setting_screen
                             setting_screen.main()
