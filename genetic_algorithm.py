@@ -9,7 +9,8 @@
 #             genetic_algorithm 함수에서 클래스로 변경
 # 2023-10-13: 유전알고리즘 구현,
 #             토너먼트 함수에서 select가 index범위에서 벗어나던 문제 해결,
-#             토너먼트 함수에서 조건을 만족하지 못하고 무한반복되던 문제 해결
+#             토너먼트 함수에서 조건을 만족하지 못하고 무한반복되던 문제 해결,
+#             현재 세대의 최고 점수 출력 추가
 
 
 import math
@@ -57,6 +58,7 @@ class Genetic_algorithm:
         
         # 현재 가장 높은 점수를 저장합니다.
         highest_score = individuals[0].fitness
+        print("%d세대의 최고점: %d" %(generation, highest_score))
 
         # 무한 반복이 아닌 목표 스코어에 도달할때 까지 반복
         while goal_score > highest_score: 
@@ -106,7 +108,7 @@ class Genetic_algorithm:
 
             # 현재 가장 높은 점수를 저장합니다.
             highest_score = individuals[0].fitness
-            print("현재 세대의 최고점: %d" %highest_score)
+            print("%d세대의 최고점: %d" %(generation, highest_score))
 
         print("목표도달!!!")
             
