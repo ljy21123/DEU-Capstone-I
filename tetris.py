@@ -22,7 +22,8 @@
 # - 2023-10-12: 블록을 놓을 공간을 탐색할때 탐색 결과가 아무것도 나오지 않던 문제 수정,
 #               가중치가 UI에서 잘리던 현상 수정
 # - 2023-10-13: 세대출력 추가, 폰트크기 수정, main()매개변수 generation과 no추가
-#               
+# - 2023-10-14: main()의 매개변수를 individual객체로 통합,
+#               FPS제한 해제
 
 import sys
 from math import sqrt
@@ -33,6 +34,7 @@ from pygame.locals import *
 
 from blocks import *
 import calculator
+import individual
 
 import datetime
 
@@ -50,7 +52,7 @@ HEIGHT = 22 # 게임 필드의 높이
 FIELD = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
 # 화면 프레임관련 변수
 FPSCLOCK = pygame.time.Clock()
-FPS = 60
+FPS = 500
 # 현재 움직이는 블록 정보
 BLOCK = None
 # 키를 누르고있으면 반복해서 입력되도록 하는 기능
@@ -233,14 +235,14 @@ def erase_line():
             ypos = ypos -1
     return erased
 
-def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None, generation = 0, no = 0): # 가중치를 여기서 받는다?
+def main(play_type = 'USER', generation = 0, indv:individual.Individual = None): # 가중치를 여기서 받는다?
     global FIELD
     global FPS
     global CALC
-
+    
     # 가중치를 입력 받았다면 가중치를 반영하여 계산할 계산 객체 생성
-    if hw != None and aw != None and clw != None and bw != None:
-        CALC = calculator.Calculator(hw, aw, clw, bw)
+    if indv.hw != None and indv.aw != None and indv.clw != None and indv.bw != None:
+        CALC = calculator.Calculator(indv.hw, indv.aw, indv.clw, indv.bw)
 
     # 구멍 개수, 모든 열의 높이 합, 완성된 줄의 수, 불연속성
     #CALC = calculator.Calculator(-1.5, -1.2, 1.0, -0.5)    
@@ -302,8 +304,8 @@ def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None, genera
                     pygame.quit()
                     sys.exit()
                 elif key == K_EQUALS and play_type == 'AI':
-                    if  FPS < 200:
-                        FPS += 10
+                    #if  FPS < 200:
+                    FPS += 10
                 elif key == K_MINUS and play_type == 'AI':
                     if 20 < FPS:
                         FPS -= 10
@@ -425,23 +427,23 @@ def main(play_type = 'USER', hw = None, aw = None, clw = None, bw = None, genera
             ge_image = genefont.render(ge_str, True, (180, 180, 180))
             SURFACE.blit(ge_image, (335, 330))
             
-            in_str = '개체 번호: ' + str(no)
+            in_str = '개체 번호: ' + str(indv.no)
             in_image = genefont.render(in_str, True, (180, 180, 180))
             SURFACE.blit(in_image, (335, 370))
 
-            hw_str = '구멍에 대한 가중치: ' + str(hw)
+            hw_str = '구멍에 대한 가중치: ' + str(indv.hw)
             hw_image = wfont.render(hw_str, True, (180, 180, 180))
             SURFACE.blit(hw_image, (335, 410))
 
-            aw_str = '총 높이에 대한 가중치: ' + str(aw)
+            aw_str = '총 높이에 대한 가중치: ' + str(indv.aw)
             aw_image = wfont.render(aw_str, True, (180, 180, 180))
             SURFACE.blit(aw_image, (335, 430))
 
-            clw_str = '완성된 줄에 대한 가중치: ' + str(clw)
+            clw_str = '완성된 줄에 대한 가중치: ' + str(indv.clw)
             clw_image = wfont.render(clw_str, True, (180, 180, 180))
             SURFACE.blit(clw_image, (335, 450))
 
-            bw_str = '높이 불연속성에 대한 가중치: ' + str(bw)
+            bw_str = '높이 불연속성에 대한 가중치: ' + str(indv.bw)
             bw_image = wfont.render(bw_str, True, (180, 180, 180))
             SURFACE.blit(bw_image, (335, 470))
 
