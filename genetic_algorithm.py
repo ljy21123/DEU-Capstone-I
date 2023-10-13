@@ -24,7 +24,7 @@ import individual
 
 
 # 한 세대의 개채 수
-SIZE = 50
+SIZE = 5
 
 
 class Genetic_algorithm:
@@ -58,6 +58,12 @@ class Genetic_algorithm:
         # 현재 가장 높은 점수를 저장합니다.
         highest_score = individuals[0].fitness
         print("%d세대의 최고점: %d" %(generation, highest_score))
+
+        # 현재 세대에서 가장 높은 점수를 받은 가중치 출력
+        print("최고점을 받은 개체의 가중치: ", end='')
+        individuals[0].print()
+        print()
+
 
         # 목표 스코어에 도달할때 까지 반복
         while goal_score > highest_score: 
@@ -112,6 +118,7 @@ class Genetic_algorithm:
             # 현재 세대에서 가장 높은 점수를 받은 가중치 출력
             print("최고점을 받은 개체의 가중치: ", end='')
             individuals[0].print()
+            print()
 
         print("목표도달!!!")
             
