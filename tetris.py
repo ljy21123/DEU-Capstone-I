@@ -23,7 +23,8 @@
 #               가중치가 UI에서 잘리던 현상 수정
 # - 2023-10-13: 세대출력 추가, 폰트크기 수정, main()매개변수 generation과 no추가
 # - 2023-10-14: main()의 매개변수를 individual객체로 통합,
-#               FPS제한 해제
+#               FPS제한 해제,
+#               KeyboardInterrupt 처리 추가
 
 import sys
 from math import sqrt
@@ -290,173 +291,179 @@ def main(play_type = 'USER', generation = 0, indv:individual.Individual = None):
     current_time = datetime.datetime.now()
     last_update_time = 0    
 
-    # 게임 무한 루프를 수행
-    while 1:
-        # 이벤트 루프를 확인
-        key = None
-        for event in pygame.event.get():
-            if event.type == QUIT: # 이벤트 타입이 종료면 게임 종료
-                pygame.quit()
-                sys.exit()
-            elif event.type == KEYDOWN: # 키를 눌렀을때 만약 esc키라면 종료
-                key = event.key
-                if key == K_ESCAPE:
+    try:
+        # 게임 무한 루프를 수행
+        while 1:
+            # 이벤트 루프를 확인
+            key = None
+            for event in pygame.event.get():
+                if event.type == QUIT: # 이벤트 타입이 종료면 게임 종료
                     pygame.quit()
                     sys.exit()
-                elif key == K_EQUALS and play_type == 'AI':
-                    #if  FPS < 200:
-                    FPS += 10
-                elif key == K_MINUS and play_type == 'AI':
-                    if 20 < FPS:
-                        FPS -= 10
+                elif event.type == KEYDOWN: # 키를 눌렀을때 만약 esc키라면 종료
+                    key = event.key
+                    if key == K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+                    elif key == K_EQUALS and play_type == 'AI':
+                        #if  FPS < 200:
+                        FPS += 10
+                    elif key == K_MINUS and play_type == 'AI':
+                        if 20 < FPS:
+                            FPS -= 10
 
-        # 플레이 타입이 USER라면 키보드 입력을 기다린다.
-        if play_type == 'USER':
-            if is_game_over():
-                SURFACE.blit(message_over, message_rect)
-                
-            else: 
-                if key == K_UP:
-                    BLOCK.up()
-                elif key == K_RIGHT:
-                    BLOCK.right()
-                elif key == K_LEFT:
-                    BLOCK.left()
-                elif key == K_DOWN:
-                    BLOCK.down()
-                elif key == K_SPACE:
-                    BLOCK.drop()
+            # 플레이 타입이 USER라면 키보드 입력을 기다린다.
+            if play_type == 'USER':
+                if is_game_over():
+                    SURFACE.blit(message_over, message_rect)
+                    
+                else: 
+                    if key == K_UP:
+                        BLOCK.up()
+                    elif key == K_RIGHT:
+                        BLOCK.right()
+                    elif key == K_LEFT:
+                        BLOCK.left()
+                    elif key == K_DOWN:
+                        BLOCK.down()
+                    elif key == K_SPACE:
+                        BLOCK.drop()
 
-                # 2차원 배열을 그림으로 그린다
-                SURFACE.fill((0, 0, 0))
-                for ypos in range(HEIGHT):
-                    for xpos in range(WIDTH):
-                        value = FIELD[ypos][xpos]
-                        pygame.draw.rect(SURFACE, COLORS[value], 
-                                        (xpos*25 + 25, ypos*25 + 25, 24 ,24))
-        
-        #플레이 타입이 AI라면 
-        elif play_type == 'AI':
-            if is_game_over():
-                SURFACE.blit(message_over, message_rect)
-                return score
-        
-            else: 
-                if len(move) == 0:
-                    move = calculate_best_placement(FIELD, BLOCK)
-                else:
-                        # 한 프레임에 블록 처리하기
-                        for _ in range(len(move)):
-                        # 프레임 단위로 처리
-                        #tik = tik + 1
-                        #if tik > FPS*0 :
-                            tik = 0
-                            key = move.pop(0)
-                            if key == K_UP:
-                                BLOCK.up()
-                            elif key == K_RIGHT:
-                                BLOCK.right()
-                            elif key == K_LEFT:
-                                BLOCK.left()
-                            elif key == K_DOWN:
-                                BLOCK.down()
-                            elif key == K_SPACE:
-                                BLOCK.drop()
-                        
-                            
-
-                # 2차원 배열을 그림으로 그린다
-                SURFACE.fill((0, 0, 0))
-                for ypos in range(HEIGHT):
-                    for xpos in range(WIDTH):
-                        value = FIELD[ypos][xpos]
-                        pygame.draw.rect(SURFACE, COLORS[value], 
-                                        (xpos*25 + 25, ypos*25 + 25, 24 ,24))
-
-        # 지워진 줄 수를 반환하여 점수에 추가한다.
-        erased = BLOCK.update()
-        if erased > 0:
-            score += erased
-        # 고정된 블럭의 색을 변경한다.
-        recolor()
-        # 화면을 그린다.
-        BLOCK.draw()
-
-
-        # 다음 블록 미리보기
-        
-        global BLOCK_QUEUE
-        ymargin = 0
-        for next_block in BLOCK_QUEUE[0:3]:
-            ymargin +=1 
-            for ypos in range(next_block.size):
-                for xpos in range(next_block.size):
-                    value = next_block.data[xpos+ypos*next_block.size]
-                    pygame.draw.rect(SURFACE, COLORS[value],
-                                     (xpos*15+460, ypos*15+75*ymargin,
-                                      15,15))
-        
-        # 점수 출력
-        # 점수 자리수 설정
-        score_str = str(score).zfill(6)
-        # 스코어 폰트 및 색상 설정
-        score_image = smallfont.render(score_str, True, (180, 180, 180))
-        #점수 출력 자리 설정
-        SURFACE.blit(score_image, (500, 30))
-
-        # 시작 시간 출력
-        # 현재 시간 변수
-        global START_TIME
-        # 문자열 변환
-        time_str = START_TIME.strftime("시작 시간: %Y.%m.%d %H:%M:%S")
-        time_image = timefont.render(time_str, True, (180, 180, 180))
-        SURFACE.blit(time_image, (335, 500))
-        
-        # 현재 시간
-        # 1초(1000ms)마다 시간 업데이트
-        if pygame.time.get_ticks() - last_update_time >= 1000:  # 1000 밀리초(1초)마다        
-            current_time = datetime.datetime.now()
-            last_update_time = pygame.time.get_ticks()
-
-        time_str = current_time.strftime("현재 시간: %Y.%m.%d %H:%M:%S")
-        time_image = timefont.render(time_str, True, (180, 180, 180))
-        SURFACE.blit(time_image, (335, 520))
-
-        if play_type == 'AI':
-            ge_str = '현재 세대: ' + str(generation)
-            ge_image = genefont.render(ge_str, True, (180, 180, 180))
-            SURFACE.blit(ge_image, (335, 330))
+                    # 2차원 배열을 그림으로 그린다
+                    SURFACE.fill((0, 0, 0))
+                    for ypos in range(HEIGHT):
+                        for xpos in range(WIDTH):
+                            value = FIELD[ypos][xpos]
+                            pygame.draw.rect(SURFACE, COLORS[value], 
+                                            (xpos*25 + 25, ypos*25 + 25, 24 ,24))
             
-            in_str = '개체 번호: ' + str(indv.no)
-            in_image = genefont.render(in_str, True, (180, 180, 180))
-            SURFACE.blit(in_image, (335, 370))
+            #플레이 타입이 AI라면 
+            elif play_type == 'AI':
+                if is_game_over():
+                    SURFACE.blit(message_over, message_rect)
+                    return score
+            
+                else: 
+                    if len(move) == 0:
+                        move = calculate_best_placement(FIELD, BLOCK)
+                    else:
+                            # 한 프레임에 블록 처리하기
+                            for _ in range(len(move)):
+                            # 프레임 단위로 처리
+                            #tik = tik + 1
+                            #if tik > FPS*0 :
+                                tik = 0
+                                key = move.pop(0)
+                                if key == K_UP:
+                                    BLOCK.up()
+                                elif key == K_RIGHT:
+                                    BLOCK.right()
+                                elif key == K_LEFT:
+                                    BLOCK.left()
+                                elif key == K_DOWN:
+                                    BLOCK.down()
+                                elif key == K_SPACE:
+                                    BLOCK.drop()
+                            
+                                
 
-            hw_str = '구멍에 대한 가중치: ' + str(indv.hw)
-            hw_image = wfont.render(hw_str, True, (180, 180, 180))
-            SURFACE.blit(hw_image, (335, 410))
+                    # 2차원 배열을 그림으로 그린다
+                    SURFACE.fill((0, 0, 0))
+                    for ypos in range(HEIGHT):
+                        for xpos in range(WIDTH):
+                            value = FIELD[ypos][xpos]
+                            pygame.draw.rect(SURFACE, COLORS[value], 
+                                            (xpos*25 + 25, ypos*25 + 25, 24 ,24))
 
-            aw_str = '총 높이에 대한 가중치: ' + str(indv.aw)
-            aw_image = wfont.render(aw_str, True, (180, 180, 180))
-            SURFACE.blit(aw_image, (335, 430))
-
-            clw_str = '완성된 줄에 대한 가중치: ' + str(indv.clw)
-            clw_image = wfont.render(clw_str, True, (180, 180, 180))
-            SURFACE.blit(clw_image, (335, 450))
-
-            bw_str = '높이 불연속성에 대한 가중치: ' + str(indv.bw)
-            bw_image = wfont.render(bw_str, True, (180, 180, 180))
-            SURFACE.blit(bw_image, (335, 470))
-
-            fps_str = '배속: ' + str(FPS) + 'FPS'
-            fps_image = timefont.render(fps_str, True, (180, 180, 180))
-            SURFACE.blit(fps_image, (335, 550))
+            # 지워진 줄 수를 반환하여 점수에 추가한다.
+            erased = BLOCK.update()
+            if erased > 0:
+                score += erased
+            # 고정된 블럭의 색을 변경한다.
+            recolor()
+            # 화면을 그린다.
+            BLOCK.draw()
 
 
+            # 다음 블록 미리보기
+            
+            global BLOCK_QUEUE
+            ymargin = 0
+            for next_block in BLOCK_QUEUE[0:3]:
+                ymargin +=1 
+                for ypos in range(next_block.size):
+                    for xpos in range(next_block.size):
+                        value = next_block.data[xpos+ypos*next_block.size]
+                        pygame.draw.rect(SURFACE, COLORS[value],
+                                        (xpos*15+460, ypos*15+75*ymargin,
+                                        15,15))
+            
+            # 점수 출력
+            # 점수 자리수 설정
+            score_str = str(score).zfill(6)
+            # 스코어 폰트 및 색상 설정
+            score_image = smallfont.render(score_str, True, (180, 180, 180))
+            #점수 출력 자리 설정
+            SURFACE.blit(score_image, (500, 30))
 
-        # 화면 업데이트
-        pygame.display.update()
-        # 프레임 설정
-        FPSCLOCK.tick(FPS)
+            # 시작 시간 출력
+            # 현재 시간 변수
+            global START_TIME
+            # 문자열 변환
+            time_str = START_TIME.strftime("시작 시간: %Y.%m.%d %H:%M:%S")
+            time_image = timefont.render(time_str, True, (180, 180, 180))
+            SURFACE.blit(time_image, (335, 500))
+            
+            # 현재 시간
+            # 1초(1000ms)마다 시간 업데이트
+            if pygame.time.get_ticks() - last_update_time >= 1000:  # 1000 밀리초(1초)마다        
+                current_time = datetime.datetime.now()
+                last_update_time = pygame.time.get_ticks()
+
+            time_str = current_time.strftime("현재 시간: %Y.%m.%d %H:%M:%S")
+            time_image = timefont.render(time_str, True, (180, 180, 180))
+            SURFACE.blit(time_image, (335, 520))
+
+            if play_type == 'AI':
+                ge_str = '현재 세대: ' + str(generation)
+                ge_image = genefont.render(ge_str, True, (180, 180, 180))
+                SURFACE.blit(ge_image, (335, 330))
+                
+                in_str = '개체 번호: ' + str(indv.no)
+                in_image = genefont.render(in_str, True, (180, 180, 180))
+                SURFACE.blit(in_image, (335, 370))
+
+                hw_str = '구멍에 대한 가중치: ' + str(indv.hw)
+                hw_image = wfont.render(hw_str, True, (180, 180, 180))
+                SURFACE.blit(hw_image, (335, 410))
+
+                aw_str = '총 높이에 대한 가중치: ' + str(indv.aw)
+                aw_image = wfont.render(aw_str, True, (180, 180, 180))
+                SURFACE.blit(aw_image, (335, 430))
+
+                clw_str = '완성된 줄에 대한 가중치: ' + str(indv.clw)
+                clw_image = wfont.render(clw_str, True, (180, 180, 180))
+                SURFACE.blit(clw_image, (335, 450))
+
+                bw_str = '높이 불연속성에 대한 가중치: ' + str(indv.bw)
+                bw_image = wfont.render(bw_str, True, (180, 180, 180))
+                SURFACE.blit(bw_image, (335, 470))
+
+                fps_str = '배속: ' + str(FPS) + 'FPS'
+                fps_image = timefont.render(fps_str, True, (180, 180, 180))
+                SURFACE.blit(fps_image, (335, 550))
+
+
+
+            # 화면 업데이트
+            pygame.display.update()
+            # 프레임 설정
+            FPSCLOCK.tick(FPS)
+
+    except KeyboardInterrupt:
+        print("종료")
+        pygame.quit()
+        sys.exit()
 
 # 복사필드의 충돌 판정 true = 충돌, false = 충돌x
 def copied_field_is_overlapped(xpos, ypos, turn, field):

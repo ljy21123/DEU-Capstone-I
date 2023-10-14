@@ -14,7 +14,7 @@
 # 2023-10-14: 랜덤한 부모가 아닌 가장 높은 점수를 받은 2개의 부모를 선택하도록 토너먼트 선택 메서드 변경,
 #             적합도가 0인 개체는 완전히 새로운 개체로 대체되도록 메서드 추가,
 #             세대에서 가장 높은 점수를 받은 개체의 가중치를 출력하도록 변경,
-#             
+#             1세대의 실행 결과 출력이 누락되던 문제 해결
 
 import math
 import random
@@ -24,7 +24,7 @@ import individual
 
 
 # 한 세대의 개채 수
-SIZE = 5
+SIZE = 50
 
 
 class Genetic_algorithm:
@@ -57,13 +57,12 @@ class Genetic_algorithm:
         
         # 현재 가장 높은 점수를 저장합니다.
         highest_score = individuals[0].fitness
+        print()
         print("%d세대의 최고점: %d" %(generation, highest_score))
 
         # 현재 세대에서 가장 높은 점수를 받은 가중치 출력
         print("최고점을 받은 개체의 가중치: ", end='')
         individuals[0].print()
-        print()
-
 
         # 목표 스코어에 도달할때 까지 반복
         while goal_score > highest_score: 
@@ -118,7 +117,6 @@ class Genetic_algorithm:
             # 현재 세대에서 가장 높은 점수를 받은 가중치 출력
             print("최고점을 받은 개체의 가중치: ", end='')
             individuals[0].print()
-            print()
 
         print("목표도달!!!")
             
@@ -147,6 +145,8 @@ class Genetic_algorithm:
         result = ', '.join(map(str, no_list))
         print("제거된 개체: ", end='')
         print(result)
+        print("제거된 개체 수: %d" %len(no_list))
+        print()
 
         for _ in range(start_index, SIZE):
             # 기존의 개체군에서 가장 적합도가 낮은 개체 제거
