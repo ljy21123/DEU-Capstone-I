@@ -82,20 +82,49 @@ def main():
                             #     import tetris   
                             #     for _ in range(100):
                             #         print(tetris.main('AI', hw, aw, clw, bw)) 
-                                
-                            import genetic_algorithm
-                            genetic_algorithm.start()
+                            with open("play_type.csv", "r", newline="") as file:    #테트리스 실행 모드 확인을 위해, play_type.csv 값을 받아옴
+                                reader = csv.reader(file)
+                                headers = next(reader)
+                                for row in reader:
+                                    play_type = row[0]
+                            if play_type == "AI":           #테트리스 실행 모드 확인 : AI 모드일 경우
+                                print("테트리스 AI 모드 화면")
+                                with open("settingNew.csv", "r", newline="") as file:
+                                    reader = csv.reader(file)
+                                    headers = next(reader)
+                                    for row in reader:
+                                        goal, individuals_size = row
+                                    goal = int(goal)
+                                    individuals_size = int(individuals_size)
+                                import genetic_algorithm
+                                genetic_algorithm.start()
+                                screen = pygame.display.set_mode((width, height))
 
-                            # 결과화면을 만들지 않아서 그냥 메인화면으로 돌아옴
-                            screen = pygame.display.set_mode((width, height))
+                            else:           #테트리스 실행 모드 확인 : 사용자 모드일 경우
+                                print("테트리스 사용자 모드 화면")
+                                with open("setting.csv", "r", newline="") as file:  # setting.csv를 읽어와서 hw, aw, clw, bw에 담음
+                                    reader = csv.reader(file)
+                                    headers = next(reader)
+                                    for row in reader:
+                                        hw, aw, clw, bw = row
+                                    hw = float(hw)
+                                    aw = float(aw)
+                                    clw = float(clw)
+                                    bw = float(bw)
+
+                                # individuals = [hw, aw, clw, bw]
+                                #
+                                # import tetris
+                                # print(tetris.main('USER', 0, individuals))
+
 
                         elif button.action == "button_2":
                             import records_screen
                             records_screen.main()
 
                         elif button.action == "button_3":
-                            import setting_screen
-                            setting_screen.main()
+                            import settingNew_screen
+                            settingNew_screen.main()
             elif event.type == KEYDOWN: # 키를 눌렀을때 만약 esc키라면 종료
                 key = event.key
                 if key == K_ESCAPE:
