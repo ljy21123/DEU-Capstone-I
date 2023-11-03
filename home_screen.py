@@ -6,6 +6,7 @@
 #             setting.csv에서 읽어 들인 데이터를 부동소수점 형태로 변환하지 않던 문제 수정,
 #             key입력 처리를 위한 pygame.locals import 추가,
 #             ESC키가 눌렸을때 프로그램이 종료되도록 기능 추가
+# 2023-11-03: 옵션 추가, 모드 선택 및 시작 기능 추가
 
 
 import csv
@@ -93,25 +94,26 @@ def main():
                                     reader = csv.reader(file)
                                     headers = next(reader)
                                     for row in reader:
-                                        goal, individuals_size = row
-                                    goal = int(goal)
-                                    individuals_size = int(individuals_size)
+                                        goal, individuals_size = row                            
                                 import genetic_algorithm
-                                genetic_algorithm.start()
-                                screen = pygame.display.set_mode((width, height))
-
-                            else:           #테트리스 실행 모드 확인 : 사용자 모드일 경우
-                                print("테트리스 사용자 모드 화면")
-                                with open("setting.csv", "r", newline="") as file:  # setting.csv를 읽어와서 hw, aw, clw, bw에 담음
+                                game = genetic_algorithm.Genetic_algorithm(int(goal), int(individuals_size))
+                                
+                            elif play_type == "temp":
+                                with open("setting.csv", "r", newline="") as file:
                                     reader = csv.reader(file)
                                     headers = next(reader)
                                     for row in reader:
-                                        hw, aw, clw, bw = row
-                                    hw = float(hw)
-                                    aw = float(aw)
-                                    clw = float(clw)
-                                    bw = float(bw)
+                                        hw, aw, clw, bw = row                                    
 
+                                import individual
+                                temp = individual.Individual(0, float(hw), float(aw), float(clw), float(bw))
+                                import tetris
+                                game = tetris.main('AI', 0, temp)
+                                screen = pygame.display.set_mode((width, height))
+                            else:           #테트리스 실행 모드 확인 : 사용자 모드일 경우
+                                print("테트리스 사용자 모드 화면")
+                                import tetris
+                                game = tetris.main()
                                 # individuals = [hw, aw, clw, bw]
                                 #
                                 # import tetris

@@ -15,6 +15,7 @@
 #             적합도가 0인 개체는 완전히 새로운 개체로 대체되도록 메서드 추가,
 #             세대에서 가장 높은 점수를 받은 개체의 가중치를 출력하도록 변경,
 #             1세대의 실행 결과 출력이 누락되던 문제 해결
+# 2023-11-03: 한 세대 개체 수, 목표점수 설정 기능 추가
 
 import math
 import random
@@ -23,16 +24,17 @@ import tetris
 import individual
 
 
-# 한 세대의 개채 수
+# 한 세대의 개체 수
 SIZE = 50
 
 
 class Genetic_algorithm:
-    def __init__(self):
+    def __init__(self, goal_score = 2000, size = 50):
         global SIZE
 
         # 목표 점수
-        goal_score = 2000
+        self.goal_score = goal_score
+        SIZE = size
 
         # 현재 가장 높은 점수
         highest_score = 0
@@ -118,6 +120,8 @@ class Genetic_algorithm:
             print("최고점을 받은 개체의 가중치: ", end='')
             individuals[0].print()
 
+        # 레코드 저장 코드 
+        
         print("목표도달!!!")
             
     # 적합도가 0인 개체를 모두 제거하고 새로운 개체로 변경
