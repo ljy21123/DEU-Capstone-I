@@ -50,11 +50,12 @@ def main():
 
     # 버튼 생성
     buttons = [
-        Button(325, 370, 150, 50, "Save", "button_1"),
+        Button(325, 250, 150, 50, "Save", "button_1"),
         Button(280, 440, 240, 80, "Back", "button_2"),
-        Button2(290, 310, 80, 40, "AI", "button_3"),
-        Button2(430, 310, 80, 40, "User", "button_4"),
+        Button2(220, 370, 100, 40, "AI", "button_AI"),
+        Button2(340, 370, 100, 40, "User", "button_USER"),
         Button2(10, 10, 200, 40, "User Setting", "button_5"),
+        Button2(460, 370, 120, 40, "Custom", "button_CUSTOM")
     ]
 
 
@@ -89,14 +90,15 @@ def main():
     input_active1 = False
     input_active2 = False
 
-    input_rect1 = pygame.Rect(450, 160, 100, 40)  # 입력 상자의 위치와 크기
-    input_rect2 = pygame.Rect(450, 215, 100, 40)  # 입력 상자의 위치와 크기
+    input_rect1 = pygame.Rect(450, 160, 100, 35)  # 입력 상자의 위치와 크기
+    input_rect2 = pygame.Rect(450, 205, 100, 35)  # 입력 상자의 위치와 크기
 
     label_preset = "사용 모드 :"
     label_image_preset = font0.render(label_preset, True, (255, 255, 255))
 
     text_type_AI = "AI"
     text_type_USER = "USER"
+    text_type_CUSTOM = "CUSTOM"
 
     label_type = ""
 
@@ -122,21 +124,27 @@ def main():
                         elif button.action == "button_2":
                             import home_screen
                             home_screen.main()
-                        elif button.action == "button_3":
+                        elif button.action == "button_AI":
                             with open("play_type.csv", "w", newline="") as file:
                                 writer = csv.writer(file)
                                 writer.writerow(["play_type"])
                                 writer.writerow([text_type_AI])
                                 print("play_type.csv AI 모드 설정 완료")
-                        elif button.action == "button_4":
+                        elif button.action == "button_USER":
                             with open("play_type.csv", "w", newline="") as file:
                                 writer = csv.writer(file)
                                 writer.writerow(["play_type"])
                                 writer.writerow([text_type_USER])
-                                print("play_type.csv 사용자 모드 저장 완료")
+                                print("play_type.csv 유저 플레이 모드 저장 완료")
                         elif button.action == "button_5":
                             import setting_screen
                             setting_screen.main()
+                        elif button.action == "button_CUSTOM":
+                            with open("play_type.csv", "w", newline="") as file:
+                                writer = csv.writer(file)
+                                writer.writerow(["play_type"])
+                                writer.writerow([text_type_CUSTOM])
+                                print("play_type.csv 사용자 설정 모드 저장 완료")
 
             with open("play_type.csv", "r", newline="") as file:
                 reader = csv.reader(file)
@@ -181,10 +189,10 @@ def main():
         screen.blit(label_image_eng, (335, 120))
 
         screen.blit(label_image_hw, (260, 165))
-        screen.blit(label_image_aw, (260, 220))
+        screen.blit(label_image_aw, (260, 210))
 
-        screen.blit(label_image_preset, (300, 260))
-        screen.blit(label_image_type, (440, 265))
+        screen.blit(label_image_preset, (300, 320))
+        screen.blit(label_image_type, (440, 325))
 
 
         pygame.draw.rect(screen, input_box_color, input_rect1)

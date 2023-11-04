@@ -49,12 +49,25 @@ def main():
     label_image_kor = font2.render(label_kor, True, (255, 255, 255))
     label_image_eng = font.render(label_eng, True, (255, 255, 255))
 
+    label_type = ""
+
+    label_image_type = font.render(label_type, True, (255, 255, 255))
+
+    with open("play_type.csv", "r", newline="") as file:
+        reader = csv.reader(file)
+        headers = next(reader)
+        for row in reader:
+            play_type = row[0]  # play_type 변수를 리스트에서 문자열로 수정
+
+    input_text0 = play_type
+
     # 버튼 생성
     buttons = [
-        Button(280, 200, 240, 80, "Run Tetris", "button_1"),
+        Button(280, 200, 240, 80, "Run "+input_text0, "button_1"),
         Button(280, 320, 240, 80, "Records", "button_2"),
         Button(280, 440, 240, 80, "Setting", "button_3")
     ]
+
 
     # 게임 루프
     running = True
@@ -70,19 +83,6 @@ def main():
                 for button in buttons:
                     if button.rect.collidepoint(pos):
                         if button.action == "button_1":
-                            # with open("setting.csv", "r", newline="") as file:   #setting.csv를 읽어와서 hw, aw, clw, bw에 담음
-                            #     reader = csv.reader(file)
-                            #     headers = next(reader)
-                            #     for row in reader:
-                            #         hw, aw, clw, bw = row
-                            #     # 파일에서 읽은 데이터는 기본적으로 문자열 형태이기 때문에 변환 필요
-                            #     hw = float(hw)
-                            #     aw = float(aw)
-                            #     clw = float(clw)
-                            #     bw = float(bw)
-                            #     import tetris   
-                            #     for _ in range(100):
-                            #         print(tetris.main('AI', hw, aw, clw, bw)) 
                             with open("play_type.csv", "r", newline="") as file:    #테트리스 실행 모드 확인을 위해, play_type.csv 값을 받아옴
                                 reader = csv.reader(file)
                                 headers = next(reader)
@@ -98,7 +98,7 @@ def main():
                                 import genetic_algorithm
                                 game = genetic_algorithm.Genetic_algorithm(int(goal), int(individuals_size))
                                 
-                            elif play_type == "temp":
+                            elif play_type == "CUSTOM":
                                 with open("setting.csv", "r", newline="") as file:
                                     reader = csv.reader(file)
                                     headers = next(reader)
@@ -131,8 +131,7 @@ def main():
                 key = event.key
                 if key == K_ESCAPE:
                     pygame.quit()
-                    sys.exit()  
-
+                    sys.exit()
 
         # 화면 업데이트
         screen.fill((43, 45, 48))
@@ -140,6 +139,7 @@ def main():
         # 라벨 위치 설정
         screen.blit(label_image_kor, (235, 70))
         screen.blit(label_image_eng, (245, 130))
+
 
         for button in buttons:
             button.draw(screen)

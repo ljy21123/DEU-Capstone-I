@@ -28,7 +28,7 @@ def main():
     font = pygame.font.SysFont(None, 50)
     font2 = pygame.font.SysFont("malgungothic", 40, bold=True)
 
-    label_kor = "설정"
+    label_kor = "가중치 설정"
     label_image_kor = font2.render(label_kor, True, (255, 255, 255))
 
 
@@ -72,13 +72,13 @@ def main():
     input_active3 = False
     input_active4 = False
 
-    input_rect1 = pygame.Rect(500, 150, 100, 40)  # 입력 상자의 위치와 크기
+    input_rect1 = pygame.Rect(430, 150, 270, 40)  # 입력 상자의 위치와 크기
 
-    input_rect2 = pygame.Rect(500, 205, 100, 40)  # 입력 상자의 위치와 크기
+    input_rect2 = pygame.Rect(430, 205, 270, 40)  # 입력 상자의 위치와 크기
 
-    input_rect3 = pygame.Rect(500, 260, 100, 40)  # 입력 상자의 위치와 크기
+    input_rect3 = pygame.Rect(430, 260, 270, 40)  # 입력 상자의 위치와 크기
 
-    input_rect4 = pygame.Rect(500, 315, 100, 40)  # 입력 상자의 위치와 크기
+    input_rect4 = pygame.Rect(430, 315, 270, 40)  # 입력 상자의 위치와 크기
 
 
     # 게임 루프
@@ -96,6 +96,7 @@ def main():
                                 writer = csv.writer(file)
                                 writer.writerow(["hw", "aw", "clw", "bw"])
                                 writer.writerow([input_text1, input_text2, input_text3, input_text4])
+                                print("setting.csv 가중치 저장 완료")
                         elif button.action == "button_2":
                             import home_screen
                             home_screen.main()
@@ -149,12 +150,12 @@ def main():
         screen.fill((43, 45, 48))
 
         # 라벨 위치 설정
-        screen.blit(label_image_kor, (360, 70))
+        screen.blit(label_image_kor, (290, 70))
 
-        screen.blit(label_image_hw, (220, 155))
-        screen.blit(label_image_aw, (220, 210))
-        screen.blit(label_image_clw, (220, 265))
-        screen.blit(label_image_bw, (220, 320))
+        screen.blit(label_image_hw, (140, 155))
+        screen.blit(label_image_aw, (140, 210))
+        screen.blit(label_image_clw, (140, 265))
+        screen.blit(label_image_bw, (140, 320))
 
         pygame.draw.rect(screen, input_box_color, input_rect1)
         if input_active1:
