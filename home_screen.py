@@ -64,8 +64,7 @@ def main():
     # 버튼 생성
     buttons = [
         Button(280, 200, 240, 80, "Run "+input_text0, "button_1"),
-        Button(280, 320, 240, 80, "Records", "button_2"),
-        Button(280, 440, 240, 80, "Setting", "button_3")
+        Button(280, 320, 240, 80, "Setting", "button_3")
     ]
 
 
