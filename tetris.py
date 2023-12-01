@@ -41,6 +41,8 @@ import datetime
 
 import copy
 
+import locale
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 # 전역 변수
 pygame.init()
